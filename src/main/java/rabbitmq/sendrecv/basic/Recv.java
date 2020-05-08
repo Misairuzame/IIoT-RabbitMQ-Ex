@@ -23,7 +23,6 @@ public class Recv {
         // 1) connection to the broker
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(BROKER_IP);
-        //factory.setVirtualHost("/dsg_lab");
         factory.setUsername("guest");
         factory.setPassword("guest");
         Connection connection = factory.newConnection();
