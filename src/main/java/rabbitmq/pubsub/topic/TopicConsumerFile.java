@@ -1,4 +1,4 @@
-package rabbitmq.pubsub.file;
+package rabbitmq.pubsub.topic;
 
 import com.rabbitmq.client.*;
 import org.apache.commons.lang3.SerializationUtils;
@@ -9,20 +9,24 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Random;
 import java.util.UUID;
 
 /**
- * Consumer che si iscrive al fanout exchange.
- * Ogni consumer riceve ogni file inviato.
+ * Consumer che si iscrive al topic exchange.
+ * Ogni consumer riceverà solo i messaggi relativi
+ * ai topic a cui si è iscritto. In questo caso ogni
+ * consumer si iscrive a 1 o 2 topic.
  */
-public class SubscribeFile {
+public class TopicConsumerFile {
 
-    private static final String EXCHANGE_NAME = "gb-exchange-fanout-file";
+    private static final String EXCHANGE_NAME = "gb-exchange-topic-file";
     private static final String BROKER_IP = "localhost";
 
     public static void main(String[] argv) throws Exception {
 
         final String randomFolder = "000-"+ UUID.randomUUID().toString();
+        String[] topics = {"*.aaa","#.bbb","ccc.*","ddd.#","#"};
 
         // 1) connection to the broker
         ConnectionFactory factory = new ConnectionFactory();
@@ -32,14 +36,20 @@ public class SubscribeFile {
         Connection connection = factory.newConnection();
 
         // 2) create a channel,
-        // a fanout exchange from the channel,
+        // a topic exchange from the channel,
         // and finally bind a queue to the exchange
         Channel channel = connection.createChannel();
-        channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.FANOUT);
+        channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
         String queueName = channel.queueDeclare().getQueue();
-        channel.queueBind(queueName, EXCHANGE_NAME, "");
+        // I topic vengono scelti a caso fra quelli indicati sopra,
+        // per iscrivermi a più topic devo fare più channel.queueBind().
+        String topic1 = topics[new Random().nextInt(topics.length)];
+        channel.queueBind(queueName, EXCHANGE_NAME, topic1);
+        String topic2 = topics[new Random().nextInt(topics.length)];
+        channel.queueBind(queueName, EXCHANGE_NAME, topic2);
 
-        System.out.println(" [*] Waiting for messages on private queue '"+queueName+"'. To exit press CTRL+C");
+        System.out.println(" [*] Waiting for messages on private queue '"+queueName+"'\n" +
+                "with topics '"+topic1+"','"+topic2+"'. To exit press CTRL+C");
 
         Consumer consumer = new DefaultConsumer(channel) {
             @Override
@@ -57,4 +67,5 @@ public class SubscribeFile {
         channel.basicConsume(queueName, true, consumer);
     }
 }
+
 

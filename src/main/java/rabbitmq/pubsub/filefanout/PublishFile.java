@@ -1,4 +1,4 @@
-package rabbitmq.pubsub.file;
+package rabbitmq.pubsub.filefanout;
 
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.ConnectionFactory;
